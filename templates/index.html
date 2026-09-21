@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loan Approval System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
+  header { background: linear-gradient(135deg, #1b5e20, #2e7d32); color: white; padding: 24px; text-align: center; }
+  header h1 { font-size: 1.7rem; }
+  header p { font-size: 0.9rem; opacity: 0.85; margin-top: 5px; }
+  .container { max-width: 960px; margin: 30px auto; padding: 0 16px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab { padding: 10px 24px; border-radius: 6px 6px 0 0; border: none; font-size: 0.95rem; font-weight: 600; cursor: pointer; background: #dde3f0; color: #555; }
+  .tab.active { background: #2e7d32; color: white; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Decision Result */
+  .result { border-radius: 12px; padding: 24px; margin-bottom: 24px; text-align: center; animation: fadeIn 0.5s ease; }
+  .result-success { background: #e8f5e9; border: 2px solid #43a047; }
+  .result-warning { background: #fff8e1; border: 2px solid #fb8c00; }
+  .result-danger  { background: #fdecea; border: 2px solid #e53935; }
+  .result-label { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+  .result-success .result-label { color: #2e7d32; }
+  .result-warning .result-label { color: #e65100; }
+  .result-danger  .result-label { color: #c62828; }
+  .conf-label { font-size: 0.9rem; color: #555; margin-top: 8px; }
+  .bar-wrap { background: #e0e0e0; border-radius: 20px; height: 12px; margin: 8px auto; max-width: 400px; overflow: hidden; }
+  .bar-success { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #43a047, #66bb6a); }
+  .bar-warning  { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #fb8c00, #ffd54f); }
+  .bar-danger   { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #e53935, #ff7043); }
+
+  /* Risk Factors */
+  .risk-box { margin-top: 14px; text-align: left; background: rgba(0,0,0,0.04); border-radius: 8px; padding: 12px 16px; }
+  .risk-box p { font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #555; }
+  .risk-item { display: inline-block; background: #e53935; color: white; border-radius: 20px; padding: 4px 12px; font-size: 0.78rem; margin: 3px; }
+
+  /* Card */
+  .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 1rem; color: #2e7d32; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  label { font-size: 0.82rem; color: #555; display: block; margin-bottom: 4px; }
+  input, select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; background: #fafafa; }
+  input:focus, select:focus { outline: none; border-color: #2e7d32; background: white; }
+  .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .btn:hover { opacity: 0.9; }
+
+  /* Batch */
+  .upload-area { border: 2px dashed #2e7d32; border-radius: 10px; padding: 40px; text-align: center; background: white; }
+  .upload-area p { color: #555; margin-top: 8px; font-size: 0.9rem; }
+  .upload-area input[type="file"] { margin-top: 16px; }
+  .summary { display: flex; gap: 16px; margin: 20px 0; }
+  .stat { flex: 1; background: white; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .stat .num { font-size: 2rem; font-weight: 700; }
+  .num-total    { color: #1a73e8; }
+  .num-approved { color: #2e7d32; }
+  .num-rejected { color: #e53935; }
+  .num-review   { color: #fb8c00; }
+  .stat p { font-size: 0.85rem; color: #777; margin-top: 4px; }
+  .error { background: #fdecea; border: 1px solid #e53935; color: #c62828; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; }
+  .table-wrap { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { background: #2e7d32; color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #f5f8ff; }
+  .pill { padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
+  .pill-Approved      { background: #e8f5e9; color: #2e7d32; }
+  .pill-Rejected      { background: #fdecea; color: #c62828; }
+  .pill-Manual.Review { background: #fff8e1; color: #e65100; }
+  .pill-manual        { background: #fff8e1; color: #e65100; }
+  .btn-outline { padding: 10px 24px; background: white; border: 2px solid #2e7d32; color: #2e7d32; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+  .btn-outline:hover { background: #2e7d32; color: white; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏦 Loan Approval Decision System</h1>
+  <p>Internal Credit Assessment Tool</p>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab {% if active_tab != 'batch' %}active{% endif %}" onclick="switchTab('single', this)">Single Application</button>
+    <button class="tab {% if active_tab == 'batch' %}active{% endif %}"  onclick="switchTab('batch', this)">Batch Processing (CSV)</button>
+  </div>
+
+  <!-- SINGLE TAB -->
+  <div class="tab-content {% if active_tab != 'batch' %}active{% endif %}" id="tab-single">
+
+    {% if result %}
+    <div class="result result-{{ result.style }}" id="result">
+      <div class="result-label">
+        {% if result.style == 'success' %}✅ Auto Approved
+        {% elif result.style == 'warning' %}⚠️ Manual Review Required
+        {% else %}❌ Auto Rejected
+        {% endif %}
+      </div>
+      <div class="conf-label">Approval Probability: <strong>{{ result.confidence }}%</strong></div>
+      <div class="bar-wrap"><div class="bar-{{ result.style }}" style="width:{{ result.confidence }}%"></div></div>
+      {% if result.risk_factors %}
+      <div class="risk-box">
+        <p>⚠️ Risk Factors Identified:</p>
+        {% for f in result.risk_factors %}
+        <span class="risk-item">{{ f }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <form action="/predict" method="POST">
+      <div class="card">
+        <h2>👤 Applicant Information</h2>
+        <div class="grid">
+          <div><label>Gender</label>
+            <select name="Gender"><option>Female</option><option>Male</option></select></div>
+          <div><label>Age</label>
+            <input type="number" name="Age" placeholder="e.g. 35" required></div>
+          <div><label>Marital Status</label>
+            <select name="Marital_Status"><option>Married</option><option>Single</option></select></div>
+          <div><label>Dependents</label>
+            <input type="number" name="Dependents" placeholder="e.g. 2" required></div>
+          <div><label>Education Level</label>
+            <select name="Education_Level"><option>Graduate</option><option>Not Graduate</option></select></div>
+          <div><label>Employment Status</label>
+            <select name="Employment_Status">
+              <option>Salaried</option><option>Self-employed</option>
+              <option>Contract</option><option>Unemployed</option>
+            </select></div>
+          <div><label>Employer Category</label>
+            <select name="Employer_Category">
+              <option>Private</option><option>Government</option>
+              <option>MNC</option><option>Business</option><option>Unemployed</option>
+            </select></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>💰 Financial Information</h2>
+        <div class="grid">
+          <div><label>Applicant Income (₹)</label>
+            <input type="number" name="Applicant_Income" placeholder="e.g. 50000" required></div>
+          <div><label>Co-applicant Income (₹)</label>
+            <input type="number" name="Coapplicant_Income" placeholder="e.g. 0" required></div>
+          <div><label>Savings (₹)</label>
+            <input type="number" name="Savings" placeholder="e.g. 20000" required></div>
+          <div><label>Credit Score</label>
+            <input type="number" name="Credit_Score" placeholder="300–900" required></div>
+          <div><label>Existing Loans</label>
+            <input type="number" name="Existing_Loans" placeholder="e.g. 1" required></div>
+          <div><label>DTI Ratio</label>
+            <input type="number" name="DTI_Ratio" step="0.01" placeholder="e.g. 0.35" required></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🏠 Loan Details</h2>
+        <div class="grid">
+          <div><label>Loan Amount (₹)</label>
+            <input type="number" name="Loan_Amount" placeholder="e.g. 200000" required></div>
+          <div><label>Loan Term (months)</label>
+            <input type="number" name="Loan_Term" placeholder="e.g. 60" required></div>
+          <div><label>Collateral Value (₹)</label>
+            <input type="number" name="Collateral_Value" placeholder="e.g. 300000" required></div>
+          <div><label>Loan Purpose</label>
+            <select name="Loan_Purpose">
+              <option>Personal</option><option>Home</option>
+              <option>Car</option><option>Business</option><option>Education</option>
+            </select></div>
+          <div><label>Property Area</label>
+            <select name="Property_Area">
+              <option>Urban</option><option>Semiurban</option><option>Rural</option>
+            </select></div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">🔍 Assess Application</button>
+    </form>
+  </div>
+
+  <!-- BATCH TAB -->
+  <div class="tab-content {% if active_tab == 'batch' %}active{% endif %}" id="tab-batch">
+    {% if batch_error %}<div class="error">⚠️ {{ batch_error }}</div>{% endif %}
+
+    <form action="/batch" method="POST" enctype="multipart/form-data">
+      <div class="upload-area">
+        <div style="font-size:2.5rem">📂</div>
+        <strong>Upload Loan Applications CSV</strong>
+        <p>CSV must contain all required feature columns</p>
+        <input type="file" name="csvfile" accept=".csv" required>
+        <button type="submit" class="btn" style="width:auto;margin-top:16px;padding:10px 32px">Process Batch</button>
+      </div>
+    </form>
+
+    {% if batch_results %}
+    <div class="summary">
+      <div class="stat"><div class="num num-total">{{ total }}</div><p>Total Applications</p></div>
+      <div class="stat"><div class="num num-approved">{{ approved }}</div><p>Auto Approved</p></div>
+      <div class="stat"><div class="num num-rejected">{{ rejected }}</div><p>Auto Rejected</p></div>
+      <div class="stat"><div class="num num-review">{{ review }}</div><p>Manual Review</p></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <strong>Preview (top 20 applications)</strong>
+      <form action="/download" method="POST">
+        <input type="hidden" name="csv_data" value="{{ batch_csv }}">
+        <button type="submit" class="btn-outline">⬇ Download Full Results</button>
+      </form>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Income</th><th>Credit Score</th><th>Loan Amount</th><th>Decision</th><th>Confidence %</th></tr>
+        </thead>
+        <tbody>
+          {% for row in batch_results %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row.Applicant_Income }}</td>
+            <td>{{ row.Credit_Score }}</td>
+            <td>{{ row.Loan_Amount }}</td>
+            <td><span class="pill pill-{{ row.Decision | replace(' ', '.') }}">{{ row.Decision }}</span></td>
+            <td>{{ row['Confidence_%'] }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    el.classList.add('active');
+  }
+  {% if result %}document.getElementById('result').scrollIntoView({behavior:'smooth'});{% endif %}
+</script>
+</body>
+</html>

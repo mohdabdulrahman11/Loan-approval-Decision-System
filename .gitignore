@@ -1,0 +1,27 @@
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+pyenv/
+
+# Deep Learning Checkpoints & Weights
+# (Ignores large model files, but lets you keep code folders)
+checkpoints/
+*.ckpt
+*.pth
+*.pt
+*.h5
+.ipynb_checkpoints/
+
+# Python caching and logs
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# OS & IDE specifics
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
